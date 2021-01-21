@@ -24,11 +24,6 @@ def main():
 
     axl = AXLHelper(ucm_host=axl_host, auth=(axl_user, axl_password), verify=False)
 
-    rt = axl.client.get_type('ns0:LPhone')()
-    for k in rt:
-        rt[k] = ''
-    phones = axl.service.listPhone(searchCriteria={'name': '*'}, returnedTags=rt)
-
     try:
         devices = axl.sql_query('select * from device')
     except zeep.exceptions.Fault as e:

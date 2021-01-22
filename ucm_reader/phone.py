@@ -1,7 +1,6 @@
-from ucm_reader.base import AXLObject, StringAndUUID, ObjApi
+from ucm_reader.base import AXLObject, StringAndUUID, ObjApi, GetRequired
 from pydantic import BaseModel, Field
 from typing import Optional, List, Any
-import zeep.helpers
 
 __all__ = ['CurrentConfig', 'Phone', 'PhoneApi']
 
@@ -48,14 +47,78 @@ class ConfidentialAccess(BaseModel):
     confidentialAccessLevel: Optional[int]
 
 
+class AssociatedEndUser(BaseModel):
+    userId: str
+
+
+class AssociatedEndUserContainer(BaseModel):
+    enduser: List[AssociatedEndUser]
+
+
+class CallInfoDisplay(BaseModel):
+    callerName: bool
+    callerNumber: bool
+    redirectedNumber: bool
+    dialedNumber: bool
+
+
+class DN(BaseModel):
+    pattern: str
+    routePartitionName: StringAndUUID
+    uuid: str
+
+
+class Line(BaseModel):
+    index: int
+    label: Optional[str]
+    display: Optional[str]
+    dirn: DN
+    # ringSetting: Optional[str]
+    # consecutiveRingSetting: Optional[str]
+    # ringSettingIdlePickupAlert: Optional[str]
+    # ringSettingActivePickupAlert: Optional[str]
+    displayAscii: Optional[str]
+    e164Mask: Optional[str]
+    # dialPlanWizardId: Optional[str]
+    # mwlPolicy: Optional[str]
+    # maxNumCalls: int
+    # busyTrigger: int
+    # callInfoDisplay: CallInfoDisplay
+    # recordingProfileName: StringAndUUID
+    # monitoringCssName: StringAndUUID
+    # recordingFlag: Optional[str]
+    # audibleMwi: Optional[str]
+    speedDial: Optional[str]
+    partitionUsage: Optional[str]
+    associatedEndusers: Optional[AssociatedEndUserContainer]
+    # missedCallLogging: bool
+    # recordingMediaSource: Optional[str]
+
+
+class LineContainer(BaseModel):
+    line: List[Line]
+
+
+class SpeedDial(BaseModel):
+    dirn: str
+    label: str
+    index: int
+
+
+class SpeedDialContainer(BaseModel):
+    speeddial: List[SpeedDial]
+
 class Phone(AXLObject):
+    _axl_search = 'name'
+    _axl_type = 'phone'
+
     name: Optional[str]
     description: Optional[str]
     product: Optional[str]
     model: Optional[str]
     class_: str = Field(None, alias='class')
     protocol: Optional[str]
-    #protocolSide: Optional[str]
+    # protocolSide: Optional[str]
     callingSearchSpaceName: StringAndUUID
     devicePoolName: StringAndUUID
     commonDeviceConfigName: StringAndUUID
@@ -63,12 +126,12 @@ class Phone(AXLObject):
     networkLocation: Optional[str]
     locationName: StringAndUUID
     mediaResourceListName: StringAndUUID
-    #networkHoldMohAudioSourceId: Optional[str]
-    #userHoldMohAudioSourceId: Optional[str]
-    #automatedAlternateRoutingCssName: StringAndUUID
-    #aarNeighborhoodName: StringAndUUID
-    #loadInformation: Optional[LoadInformation]
-    #traceFlag: Optional[str]
+    # networkHoldMohAudioSourceId: Optional[str]
+    # userHoldMohAudioSourceId: Optional[str]
+    # automatedAlternateRoutingCssName: StringAndUUID
+    # aarNeighborhoodName: StringAndUUID
+    # loadInformation: Optional[LoadInformation]
+    # traceFlag: Optional[str]
     # mlppIndicationStatus: Optional[str]
     # preemption: Optional[str]
     # useTrustedRelayPoint: Optional[str]
@@ -171,218 +234,11 @@ class Phone(AXLObject):
     ctiid: Optional[str]
     uuid: Optional[str]
 
-
-class AssociatedEndUser(BaseModel):
-    userId: str
-
-
-class AssociatedEndUserContainer(BaseModel):
-    enduser: List[AssociatedEndUser]
-
-
-class CallInfoDisplay(BaseModel):
-    callerName: bool
-    callerNumber: bool
-    redirectedNumber: bool
-    dialedNumber: bool
-
-
-class DN(BaseModel):
-    pattern: str
-    routePartitionName: StringAndUUID
-    uuid: str
-
-
-class Line(BaseModel):
-    index: int
-    label: Optional[str]
-    display: Optional[str]
-    dirn: DN
-    # ringSetting: Optional[str]
-    # consecutiveRingSetting: Optional[str]
-    # ringSettingIdlePickupAlert: Optional[str]
-    # ringSettingActivePickupAlert: Optional[str]
-    displayAscii: Optional[str]
-    e164Mask: Optional[str]
-    # dialPlanWizardId: Optional[str]
-    # mwlPolicy: Optional[str]
-    # maxNumCalls: int
-    # busyTrigger: int
-    # callInfoDisplay: CallInfoDisplay
-    # recordingProfileName: StringAndUUID
-    # monitoringCssName: StringAndUUID
-    # recordingFlag: Optional[str]
-    # audibleMwi: Optional[str]
-    speedDial: Optional[str]
-    partitionUsage: Optional[str]
-    associatedEndusers: Optional[AssociatedEndUserContainer]
-    # missedCallLogging: bool
-    # recordingMediaSource: Optional[str]
-
-
-class LineContainer(BaseModel):
-    line: List[Line]
-
-
-class PhoneDetails(Phone):
-    # vendorConfig: Any
-    # versionStamp: Any
-    # mlppDomainId: Any
-    lines: Optional[LineContainer]
-    speeddials: Any
-    busyLampFields: Any
-    blfDirectedCallParks: Any
-    # addOnModules: Any
-    # services: Any
-    # sshPwd: Any
-    # cgpnIngressDN: StringAndUUID
-    # useDevicePoolCgpnIngressDN: bool
-    # msisdn: Any
-    # wifiHotspotProfile: StringAndUUID
-    # wirelessLanProfileGroup: StringAndUUID
-    # elinGroup: StringAndUUID
-    # activationIDStatus: Any
-
-
-"""
-class RPhone:
-    name: str
-    description: str
-    product: str
-    model: str
-    class_: str
-    protocol: str
-    protocolSide: str
-    callingSearchSpaceName: str
-    devicePoolName: str
-    commonDeviceConfigName: str
-    commonPhoneConfigName: str
-    networkLocation: str
-    locationName: str
-    mediaResourceListName: str
-    networkHoldMohAudioSourceId: str
-    userHoldMohAudioSourceId: str
-    automatedAlternateRoutingCssName: str
-    aarNeighborhoodName: str
-    loadInformation: str
-        vendorConfig: str
-        versionStamp: str
-    traceFlag: str
-        mlppDomainId: str
-    mlppIndicationStatus: str
-    preemption: str
-    useTrustedRelayPoint: str
-    retryVideoCallAsAudio: str
-    securityProfileName: str
-    sipProfileName: str
-    cgpnTransformationCssName: str
-    useDevicePoolCgpnTransformCss: str
-    geoLocationName: str
-    geoLocationFilterName: str
-    sendGeoLocation: str
-        lines: str
-    numberOfButtons: str
-    phoneTemplateName: str
-        speeddials: str
-        busyLampFields: str
-    primaryPhoneName: str
-    ringSettingIdleBlfAudibleAlert: str
-    ringSettingBusyBlfAudibleAlert: str
-        blfDirectedCallParks: str
-        addOnModules: str
-    userLocale: str
-    networkLocale: str
-    idleTimeout: str
-    authenticationUrl: str
-    directoryUrl: str
-    idleUrl: str
-    informationUrl: str
-    messagesUrl: str
-    proxyServerUrl: str
-    servicesUrl: str
-        services: str
-    softkeyTemplateName: str
-    loginUserId: str
-    defaultProfileName: str
-    enableExtensionMobility: str
-    currentProfileName: str
-    loginTime: str
-    loginDuration: str
-    currentConfig: str
-    singleButtonBarge: str
-    joinAcrossLines: str
-    builtInBridgeStatus: str
-    callInfoPrivacyStatus: str
-    hlogStatus: str
-    ownerUserName: str
-    ignorePresentationIndicators: str
-    packetCaptureMode: str
-    packetCaptureDuration: str
-    subscribeCallingSearchSpaceName: str
-    rerouteCallingSearchSpaceName: str
-    allowCtiControlFlag: str
-    presenceGroupName: str
-    unattendedPort: str
-    requireDtmfReception: str
-    rfc2833Disabled: str
-    certificateOperation: str
-    authenticationMode: str
-    keySize: str
-    keyOrder: str
-    ecKeySize: str
-    authenticationString: str
-    certificateStatus: str
-    upgradeFinishTime: str
-    deviceMobilityMode: str
-    roamingDevicePoolName: str
-    remoteDevice: str
-    dndOption: str
-    dndRingSetting: str
-    dndStatus: str
-    isActive: str
-    isDualMode: str
-    mobilityUserIdName: str
-    phoneSuite: str
-    phoneServiceDisplay: str
-    isProtected: str
-    mtpRequired: str
-    mtpPreferedCodec: str
-    dialRulesName: str
-    sshUserId: str
-        sshPwd: str
-    digestUser: str
-    outboundCallRollover: str
-    hotlineDevice: str
-    secureInformationUrl: str
-    secureDirectoryUrl: str
-    secureMessageUrl: str
-    secureServicesUrl: str
-    secureAuthenticationUrl: str
-    secureIdleUrl: str
-    alwaysUsePrimeLine: str
-    alwaysUsePrimeLineForVoiceMessage: str
-    featureControlPolicy: str
-    deviceTrustMode: str
-    earlyOfferSupportForVoiceCall: str
-    requireThirdPartyRegistration: str
-    blockIncomingCallsWhenRoaming: str
-    homeNetworkId: str
-    AllowPresentationSharingUsingBfcp: str
-    confidentialAccess: str
-    requireOffPremiseLocation: str
-    allowiXApplicableMedia: str
-        cgpnIngressDN: str
-        useDevicePoolCgpnIngressDN: str
-        msisdn: str
-    enableCallRoutingToRdWhenNoneIsActive: str
-        wifiHotspotProfile: str
-        wirelessLanProfileGroup: str
-        elinGroup: str
-    enableActivationID: str
-        activationIDStatus: str
-    mraServiceDomain: str
-    allowMraMode: str
-"""
+    # the following attributed require an AXL get
+    lines: Optional[LineContainer] = GetRequired
+    speeddials: Optional[SpeedDialContainer] = GetRequired
+    busyLampFields: Any = GetRequired
+    blfDirectedCallParks: Any = GetRequired
 
 
 class PhoneApi(ObjApi):
@@ -392,13 +248,5 @@ class PhoneApi(ObjApi):
 
     def list(self, refresh=False) -> List[Phone]:
         if refresh or self._list is None:
-            self._list = Phone.do_list(self.service.listPhone, 'name')
+            self._list = Phone.do_list(obj_api=self)
         return self._list
-
-    def details(self, phone: Phone) -> PhoneDetails:
-        print(f'details(){phone.uuid}')
-        rt = {field: '' for field in PhoneDetails.__fields__}
-        r = self.service.getPhone(uuid=phone.uuid)
-        serialized = zeep.helpers.serialize_object(r['return']['phone'])
-        o = PhoneDetails.parse_obj(serialized)
-        return o

@@ -3,3 +3,5 @@ zeep
 pydantic
 requests
 urllib3
+aiohttp
+webexteamssdk

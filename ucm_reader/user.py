@@ -1,16 +1,18 @@
-from ucm_reader.base import AXLObject, StringAndUUID, ObjApi
-from pydantic import BaseModel
+from ucm_reader.base import AXLObject, StringAndUUID, ObjApi, GetRequired
+from pydantic import BaseModel, Field
 from typing import Optional, List
 
-__all__ = ['PrimaryExtension', 'User', 'UserApi']
+__all__ = ['User', 'UserApi']
 
 
 class PrimaryExtension(BaseModel):
     pattern: Optional[str]
     routePartitionName: Optional[str]
 
-
 class User(AXLObject):
+    _axl_search = 'userid'
+    _axl_type = 'user'
+
     firstName: Optional[str]
     middleName: Optional[str]
     lastName: Optional[str]
@@ -19,7 +21,7 @@ class User(AXLObject):
     department: Optional[str]
     manager: Optional[str]
     #userLocale: Optional[str]
-    primaryExtension: PrimaryExtension
+    primaryExtension: Optional[PrimaryExtension]
     #associatedPc: Optional[str]
     #enableCti: Optional[str]
     #subscribeCallingSearchSpaceName: StringAndUUID
@@ -45,6 +47,9 @@ class User(AXLObject):
     userIdentity: Optional[str]
     uuid: str
 
+    # the following attributed require an AXL get
+    convertUserAccount: Optional[StringAndUUID] = GetRequired
+
 
 class UserApi(ObjApi):
     def __init__(self, zeep_service):
@@ -53,5 +58,5 @@ class UserApi(ObjApi):
 
     def list(self, refresh=False) -> List[User]:
         if refresh or self._list is None:
-            self._list = User.do_list(self.service.listUser, 'userid')
+            self._list = User.do_list(obj_api=self)
         return self._list

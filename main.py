@@ -18,6 +18,9 @@ TEST_USERS_TO_PROVISION = 10
 # number of parallel user provisioning tasks
 PARALLEL_TASKS = 5
 
+# don't actually provision users
+READONLY = True
+
 
 def from_env(key: str) -> str:
     value = os.getenv(key)
@@ -98,6 +101,11 @@ async def provision_single_user(sema: asyncio.Semaphore,
             print(f'{user.mailid}: user exists')
             return
         print(f'{user.mailid}: user does not exist')
+
+        if READONLY:
+            print(f'{user.mailid} Skipping provisioning b/c READONLY is set')
+            return
+
         print(f'{user.mailid}: creating user')
         new_user = await api.people.create(emails=[email],
                                            display_name=webex_display_name(user),

@@ -7,7 +7,6 @@ import zeep.helpers
 import zeep.exceptions
 from zeep.plugins import HistoryPlugin
 import requests
-import tempfile
 import os
 from collections import OrderedDict
 import re
@@ -19,10 +18,11 @@ log = logging.getLogger(__name__)
 
 __all__ = ['AXLHelper']
 
+
 class AXLHelper:
+    # noinspection SpellCheckingInspection
     def __init__(self, ucm_host, auth, version=None, verify=None, timeout=60):
         """
-
         :param ucm_host: IP/FQDN of host to direct AXL requests to, optional with port spec
         :param auth: passed to requests.Session object. For basic authentication simply pass a (user/password) tuple
         :param version: String of WSDL version to use. For example: '12.0'
@@ -43,6 +43,7 @@ class AXLHelper:
 
         wsdl_version = version
 
+        # noinspection SpellCheckingInspection
         self.wsdl = os.path.join(os.path.dirname(__file__), 'WSDL', wsdl_version, 'AXLAPI.wsdl')
         temp_dir = None
         if not os.path.isfile(self.wsdl):
@@ -54,8 +55,8 @@ class AXLHelper:
             with open(temp_zip_file_name, 'wb') as f:
                 f.write(r.content)
             log.debug(f'__init__: downloaded {temp_zip_file_name}')
-            with zipfile.ZipFile(temp_zip_file_name, 'r') as zip:
-                zip.extractall(path=temp_dir.name)
+            with zipfile.ZipFile(temp_zip_file_name, 'r') as zip_handle:
+                zip_handle.extractall(path=temp_dir.name)
             log.debug(f'__init__: extracted {temp_zip_file_name}')
             self.wsdl = os.path.join(temp_dir.name, 'schema', 'current', 'AXLAPI.wsdl')
             log.debug(f'__init__: using {self.wsdl}')
@@ -78,6 +79,7 @@ class AXLHelper:
             temp_dir.cleanup()
         return
 
+    # noinspection SpellCheckingInspection
     def _get_version(self):
         """
         Get UCM version w/o using zeep.
@@ -160,7 +162,7 @@ class AXLHelper:
         r = r['return'][next((r for r in r['return']))]
         return [zeep.helpers.serialize_object(s) for s in r]
 
-    ################ service parameter
+    # ************** service parameter
     def get_service_parameter(self, process_node_name, name, service):
         tags = ['name', 'service', 'value', 'valueType', 'processNodeName']
         r = self.service.getServiceParameter(processNodeName=process_node_name,
@@ -207,12 +209,12 @@ class AXLHelper:
         r = self.service.listCss(searchCriteria=search_criteria, returnedTags={t: '' for t in tags})
         return self.handle_list_response(r)
 
-    ############### process nodes
+    # ************** process nodes
     def list_process_node(self, **search_criteria):
         search_criteria = self.filter_search_criteria(search_criteria, ['name', 'description', 'processNodeRole'],
                                                       'name')
         # tags = ['name', 'description', 'ipv6Name', 'nodeUsage', 'lbmHubGroup', 'processNodeRole']
-        # requesting processNodeRole fails as zeep fails to parse this part of thre response:
+        # requesting processNodeRole fails as zeep fails to parse this part of the response:
         #    <processNodeRole>CUCM Voice/Video</processNodeRole>
         tags = ['name', 'description', 'mac', 'ipv6Name', 'nodeUsage', 'lbmHubGroup']
         r = self.service.listProcessNode(search_criteria, returnedTags={t: '' for t in tags})
@@ -230,22 +232,22 @@ class AXLHelper:
 
         # we do a direct update via SQL. For some reason the thick AXL method did not work?
         # update ProcessNode set Name='emea-imp-pub.tmevalidate.com' where pkid='5f9a6a63-9fd0-49c0-8fd4-99de7894e975'
-        sql = 'update processnode set name=\'{new_name}\' where {key}=\'{value}\''.format(new_name=new_name, key=key,
-                                                                                          value=value)
+        # noinspection SqlDialectInspection,SqlNoDataSourceInspection
+        sql = f'update processnode set name=\'{new_name}\' where {key}=\'{value}\''
         r = self.sql_update(sql=sql)
         return r
 
-    ############### user
-    def list_user(self, returnedTags=None, **search_criteria):
+    # ************** user
+    def list_user(self, returned_tags=None, **search_criteria):
         search_criteria = self.filter_search_criteria(search_criteria,
                                                       ['firstName', 'lastName', 'userid', 'department'],
                                                       'userid')
 
-        returnedTags = returnedTags or {'uuid': '', 'userid': '', 'firstName': '', 'lastName': ''}
-        r = self.service.listUser(searchCriteria=search_criteria, returnedTags=returnedTags)
+        returned_tags = returned_tags or {'uuid': '', 'userid': '', 'firstName': '', 'lastName': ''}
+        r = self.service.listUser(searchCriteria=search_criteria, returnedTags=returned_tags)
         return self.handle_list_response(r)
 
-    ############### CSS
+    # ************** CSS
     def add_update_css(self, name, description, clause):
         member_list = [
             {'routePartitionName': p,
@@ -258,9 +260,9 @@ class AXLHelper:
             'members': {'member': member_list}
         }
         try:
-            p = self.service.getCss(name=name,
-                                    returnedTags={'description': '', 'clause': ''})
-        except zeep.exceptions.Fault as e:
+            self.service.getCss(name=name,
+                                returnedTags={'description': '', 'clause': ''})
+        except zeep.exceptions.Fault:
             p = self.service.addCss(css=css)
         else:
             p = self.service.updateCss(name=name,
@@ -269,7 +271,7 @@ class AXLHelper:
 
         return p['return']
 
-    ############### route partition
+    # ************** route partition
     def list_route_partition(self, **search_criteria):
         search_criteria = self.filter_search_criteria(search_criteria, ['name', 'description'], 'name')
         tags = ['name', 'description', 'dialPlanWizardGenId', 'timeScheduleIdName', 'useOriginatingDeviceTimeZone',
@@ -279,7 +281,7 @@ class AXLHelper:
 
     def get_route_partition(self, **search_criteria):
         search_criteria = self.filter_search_criteria(search_criteria, ['name', 'uuid'], 'name')
-        assert search_criteria is not None, 'Search criteria mantatory'
+        assert search_criteria is not None, 'Search criteria mandatory'
         assert len(search_criteria) == 1, 'Only name or uuid can be used'
 
         tags = ['name', 'description', 'dialPlanWizardGenId', 'timeScheduleIdName', 'useOriginatingDeviceTimeZone',
@@ -311,10 +313,10 @@ class AXLHelper:
             p = self.update_route_partition(name=name, description=description)
         return p
 
-    ################ route list
+    # ************** route list
     def get_route_list(self, **search_criteria):
         search_criteria = self.filter_search_criteria(search_criteria, ['name', 'uuid'], 'name')
-        assert search_criteria is not None, 'Search criteria mantatory'
+        assert search_criteria is not None, 'Search criteria mandatory'
         assert len(search_criteria) == 1, 'Only name or uuid can be used'
 
         tags = ['name', 'description', 'callManagerGroupName', 'routeListEnabled']
@@ -329,14 +331,15 @@ class AXLHelper:
 
     def add_update_route_list(self, **values):
         try:
-            r = self.service.getRouteList(name=values['name'])
-        except zeep.exceptions.Fault as e:
+            self.service.getRouteList(name=values['name'])
+        except zeep.exceptions.Fault:
             r = self.service.addRouteList(routeList=values)
         else:
             r = self.service.updateRouteList(**values)
         return r['return']
 
-    ################ route pattern
+    # ************** route pattern
+    # noinspection SpellCheckingInspection
     ROUTE_PATTERN_TAGS = ['pattern', 'description', 'usage', 'routePartitionName', 'blockEnable',
                           'calledPartyTransformationMask',
                           'callingPartyTransformationMask', 'useCallingPartyPhoneMask', 'callingPartyPrefixDigits',
@@ -360,7 +363,7 @@ class AXLHelper:
 
     def get_route_pattern(self, returned_tags=None, **search_criteria):
         search_criteria = self.filter_search_criteria(search_criteria, ['uuid', 'pattern', 'routePartitionName'])
-        assert search_criteria is not None, 'Search criteria mantatory'
+        assert search_criteria is not None, 'Search criteria mandatory'
 
         returned_tags = returned_tags or self.ROUTE_PATTERN_TAGS
 
@@ -383,6 +386,7 @@ class AXLHelper:
         return r['return']
 
     def add_update_route_pattern(self, pattern, partition, description, route_list_name):
+        # noinspection SpellCheckingInspection
         route_pattern = {
             'pattern': pattern,
             'routePartitionName': partition,
@@ -416,7 +420,8 @@ class AXLHelper:
         r = self.service.removeRoutePattern(uuid=uuid)
         return r
 
-    ######### called party transforms
+    # ************** called party transforms
+    # noinspection SpellCheckingInspection
     CDPTX_TAGS = ['pattern', 'description', 'usage', 'routePartitionName', 'calledPartyTransformationMask',
                   'dialPlanName', 'digitDiscardInstructionName', 'patternUrgency', 'routeFilterName',
                   'calledPartyPrefixDigits', 'calledPartyNumberingPlan', 'calledPartyNumberType',
@@ -439,7 +444,7 @@ class AXLHelper:
         r = self.service.removeCalledPartyTransformationPattern(uuid=uuid)
         return r
 
-    ######### SIP profile
+    # ************** SIP profile
     SIP_PROFILE_TAGS = ['name', 'description']
 
     def get_sip_profile(self, name):
@@ -463,6 +468,7 @@ class AXLHelper:
         return r['return']
 
     def add_update_sip_profile(self, sip_profile):
+        # noinspection SpellCheckingInspection
         standard_sip_profile = {
             'defaultTelephonyEventPayloadType': '101',
             'redirectByApplication': False,
@@ -567,7 +573,7 @@ class AXLHelper:
             p = self.update_sip_profile(**sip_profile)
         return p
 
-    ################ translation pattern
+    # ************** translation pattern
     TRANS_PATTERN_TAGS = ['pattern', 'description', 'routePartitionName']
 
     def list_translation(self, returned_tags=None, **search_criteria):
@@ -586,6 +592,7 @@ class AXLHelper:
                         block_enable=False, urgency=True,
                         outside_dial_tone=False, css_inheritance=True,
                         dont_wait_for_idt=True):
+        # noinspection SpellCheckingInspection
         translation = {
             'pattern': pattern,
             'routePartitionName': partition,
@@ -609,6 +616,7 @@ class AXLHelper:
                                block_enable=False, urgency=True,
                                outside_dial_tone=False, css_inheritance=True,
                                dont_wait_for_idt=True):
+        # noinspection SpellCheckingInspection
         translation = {
             'pattern': pattern,
             'routePartitionName': partition,
@@ -624,10 +632,10 @@ class AXLHelper:
             'calledPartyTransformationMask': called_party_transformation_mask
         }
         try:
-            p = self.service.getTransPattern(pattern=pattern,
-                                             routePartitionName=partition,
-                                             returnedTags={'pattern': '', 'routePartitionName': ''})
-        except zeep.exceptions.Fault as e:
+            self.service.getTransPattern(pattern=pattern,
+                                         routePartitionName=partition,
+                                         returnedTags={'pattern': '', 'routePartitionName': ''})
+        except zeep.exceptions.Fault:
             p = self.service.addTransPattern(transPattern=translation)
         else:
             translation.pop('usage', None)
@@ -638,7 +646,8 @@ class AXLHelper:
         r = self.service.removeTransPattern(uuid=uuid)
         return r
 
-    ########## CnPTx
+    # ************** CnPTx
+    # noinspection PyShadowingBuiltins,SpellCheckingInspection
     def add_update_cnptx(self, pattern, partition, description, discard, prefix, plan, type, mask=''):
         trans = {
             'pattern': pattern,
@@ -656,17 +665,17 @@ class AXLHelper:
             'mlppPreemptionDisabled': False
         }
         try:
-            p = self.service.getCallingPartyTransformationPattern(pattern=pattern,
-                                                                  routePartitionName=partition,
-                                                                  returnedTags={'pattern': '',
-                                                                                'routePartitionName': ''})
+            self.service.getCallingPartyTransformationPattern(pattern=pattern,
+                                                              routePartitionName=partition,
+                                                              returnedTags={'pattern': '',
+                                                                            'routePartitionName': ''})
         except zeep.exceptions.Fault:
             p = self.service.addCallingPartyTransformationPattern(callingPartyTransformationPattern=trans)
         else:
             p = self.service.updateCallingPartyTransformationPattern(**trans)
         return p['return']
 
-    ####### etc
+    # ************** etc
 
     def add_update_lrg(self, name, description):
         try:
@@ -694,8 +703,8 @@ class AXLHelper:
             'pstnFailPrepend': pstn_prepend
         }
         try:
-            r = self.service.getAdvertisedPatterns(pattern=pattern)
-        except zeep.exceptions.Fault as e:
+            self.service.getAdvertisedPatterns(pattern=pattern)
+        except zeep.exceptions.Fault:
             r = self.service.addAdvertisedPatterns(advertisedPatterns=ad_pattern)
         else:
             r = self.service.updateAdvertisedPatterns(**ad_pattern)
@@ -703,8 +712,8 @@ class AXLHelper:
 
     def add_update_date_time_group(self, dt_group):
         try:
-            r = self.service.getDateTimeGroup(name=dt_group['name'])
-        except zeep.exceptions.Fault as e:
+            self.service.getDateTimeGroup(name=dt_group['name'])
+        except zeep.exceptions.Fault:
             r = self.service.addDateTimeGroup(dateTimeGroup=dt_group)
         else:
             r = self.service.updateDateTimeGroup(**dt_group)
@@ -712,8 +721,8 @@ class AXLHelper:
 
     def add_update_device_pool(self, dp):
         try:
-            r = self.service.getDevicePool(name=dp['name'])
-        except zeep.exceptions.Fault as e:
+            self.service.getDevicePool(name=dp['name'])
+        except zeep.exceptions.Fault:
             r = self.service.addDevicePool(devicePool=dp)
         else:
             r = self.service.updateDevicePool(**dp)
@@ -722,9 +731,9 @@ class AXLHelper:
     def add_update_line(self, dn):
         returned_tags = {k: '' for k in dn.keys()}
         try:
-            r = self.service.getLine(pattern=dn['pattern'], routePartitionName=dn['routePartitionName'],
-                                     returnedTags=returned_tags)
-        except zeep.exceptions.Fault as e:
+            self.service.getLine(pattern=dn['pattern'], routePartitionName=dn['routePartitionName'],
+                                 returnedTags=returned_tags)
+        except zeep.exceptions.Fault:
             r = self.service.addLine(line=dn)
         else:
             dn.pop('usage', None)
@@ -733,8 +742,8 @@ class AXLHelper:
 
     def add_update_phone(self, phone):
         try:
-            r = self.service.getPhone(name=phone['name'])
-        except zeep.exceptions.Fault as e:
+            self.service.getPhone(name=phone['name'])
+        except zeep.exceptions.Fault:
             r = self.service.addPhone(phone=phone)
         else:
             to_pop = ['product', 'protocolSide', 'class', 'protocol']
@@ -745,17 +754,18 @@ class AXLHelper:
 
     def add_update_fgt(self, fgt):
         try:
-            r = self.service.getFeatureGroupTemplate(name=fgt['name'])
-        except zeep.exceptions.Fault as e:
+            self.service.getFeatureGroupTemplate(name=fgt['name'])
+        except zeep.exceptions.Fault:
             r = self.service.addFeatureGroupTemplate(featureGroupTemplate=fgt)
         else:
             r = self.service.updateFeatureGroupTemplate(**fgt)
         return r['return']
 
+    # noinspection PyShadowingBuiltins
     def add_update_ldap_filter(self, filter):
         try:
-            r = self.service.getLdapFilter(name=filter['name'])
-        except zeep.exceptions.Fault as e:
+            self.service.getLdapFilter(name=filter['name'])
+        except zeep.exceptions.Fault:
             r = self.service.addLdapFilter(ldapFilter=filter)
         else:
             r = self.service.updateLdapFilter(**filter)
@@ -763,8 +773,8 @@ class AXLHelper:
 
     def add_update_ldap_directory(self, directory):
         try:
-            r = self.service.getLdapDirectory(name=directory['name'])
-        except zeep.exceptions.Fault as e:
+            self.service.getLdapDirectory(name=directory['name'])
+        except zeep.exceptions.Fault:
             r = self.service.addLdapDirectory(ldapDirectory=directory)
         else:
             attrs_not_in_update = ['mailId', 'directoryUri', 'middleName', 'phoneNumber']
@@ -774,6 +784,7 @@ class AXLHelper:
         return r['return']
 
     def add_update_sip_trunk_security_profile(self, profile):
+        # noinspection SpellCheckingInspection
         default_security_profile = {
             'securityMode': 'Non Secure',
             'incomingTransport': 'TCP+UDP',
@@ -795,14 +806,15 @@ class AXLHelper:
         security_profile.update(**profile)
         profile = security_profile
         try:
-            r = self.service.getSipTrunkSecurityProfile(name=profile['name'])
-        except zeep.exceptions.Fault as e:
+            self.service.getSipTrunkSecurityProfile(name=profile['name'])
+        except zeep.exceptions.Fault:
             r = self.service.addSipTrunkSecurityProfile(sipTrunkSecurityProfile=profile)
         else:
             r = self.service.updateSipTrunkSecurityProfile(**profile)
         return r['return']
 
     def add_update_sip_trunk(self, trunk):
+        # noinspection SpellCheckingInspection
         default_sip_trunk = {
             'product': 'SIP Trunk',
             'class': 'Trunk',
@@ -875,8 +887,8 @@ class AXLHelper:
         sip_trunk.update(**trunk)
         trunk = sip_trunk
         try:
-            r = self.service.getSipTrunk(name=trunk['name'])
-        except zeep.exceptions.Fault as e:
+            self.service.getSipTrunk(name=trunk['name'])
+        except zeep.exceptions.Fault:
             r = self.service.addSipTrunk(sipTrunk=trunk)
         else:
             attrs_not_in_update = ['product', 'protocolSide', 'loadInformation', 'protocol', 'traceFlag', 'class']
@@ -888,8 +900,8 @@ class AXLHelper:
 
     def add_update_route_group(self, route_group):
         try:
-            r = self.service.getRouteGroup(name=route_group['name'])
-        except zeep.exceptions.Fault as e:
+            self.service.getRouteGroup(name=route_group['name'])
+        except zeep.exceptions.Fault:
             r = self.service.addRouteGroup(routeGroup=route_group)
         else:
             r = self.service.updateRouteGroup(**route_group)
@@ -897,9 +909,9 @@ class AXLHelper:
 
     def add_update_sip_route_pattern(self, route_pattern):
         try:
-            r = self.service.getSipRoutePattern(pattern=route_pattern['pattern'],
-                                                routePartitionName=route_pattern['routePartitionName'])
-        except zeep.exceptions.Fault as e:
+            self.service.getSipRoutePattern(pattern=route_pattern['pattern'],
+                                            routePartitionName=route_pattern['routePartitionName'])
+        except zeep.exceptions.Fault:
             r = self.service.addSipRoutePattern(sipRoutePattern=route_pattern)
         else:
             attrs_not_in_update = ['usage']
@@ -909,6 +921,7 @@ class AXLHelper:
         return r['return']
 
     def add_update_universal_device_template(self, site_udt):
+        # noinspection SpellCheckingInspection
         base_udt = {
             'deviceSecurityProfile': 'Universal Device Template - Model-independent Security Profile',
             'phoneButtonTemplate': 'Universal Device Template Button Layout',
@@ -972,14 +985,15 @@ class AXLHelper:
         udt = dict(base_udt)
         udt.update(**site_udt)
         try:
-            r = self.service.getUniversalDeviceTemplate(name=udt['name'])
-        except zeep.exceptions.Fault as e:
+            self.service.getUniversalDeviceTemplate(name=udt['name'])
+        except zeep.exceptions.Fault:
             r = self.service.addUniversalDeviceTemplate(universalDeviceTemplate=udt)
         else:
             r = self.service.updateUniversalDeviceTemplate(**udt)
         return r['return']
 
     def add_update_universal_line_template(self, site_ult):
+        # noinspection SpellCheckingInspection
         base_ult = {
             'voiceMailProfile': None,
             'extCallControlProfile': None,
@@ -1014,8 +1028,8 @@ class AXLHelper:
         ult = dict(base_ult)
         ult.update(**site_ult)
         try:
-            r = self.service.getUniversalLineTemplate(name=ult['name'])
-        except zeep.exceptions.Fault as e:
+            self.service.getUniversalLineTemplate(name=ult['name'])
+        except zeep.exceptions.Fault:
             r = self.service.addUniversalLineTemplate(universalLineTemplate=ult)
         else:
             r = self.service.updateUniversalLineTemplate(**ult)
@@ -1023,8 +1037,8 @@ class AXLHelper:
 
     def add_update_user_profile_provision(self, upp):
         try:
-            r = self.service.getUserProfileProvision(name=upp['name'])
-        except zeep.exceptions.Fault as e:
+            self.service.getUserProfileProvision(name=upp['name'])
+        except zeep.exceptions.Fault:
             r = self.service.addUserProfileProvision(userProfileProvision=upp)
         else:
             r = self.service.updateUserProfileProvision(**upp)
@@ -1033,8 +1047,8 @@ class AXLHelper:
 
     def add_update_cti_rp(self, cti_rp):
         try:
-            r = self.service.getCtiRoutePoint(name=cti_rp['name'])
-        except zeep.exceptions.Fault as e:
+            self.service.getCtiRoutePoint(name=cti_rp['name'])
+        except zeep.exceptions.Fault:
             r = self.service.addCtiRoutePoint(ctiRoutePoint=cti_rp)
         else:
             to_pop = ['product', 'protocolSide', 'class', 'protocol']
@@ -1045,8 +1059,8 @@ class AXLHelper:
 
     def add_update_app_user(self, app_user):
         try:
-            r = self.service.getAppUser(userid=app_user['userid'])
-        except zeep.exceptions.Fault as e:
+            self.service.getAppUser(userid=app_user['userid'])
+        except zeep.exceptions.Fault:
             r = self.service.addAppUser(appUser=app_user)
         else:
             r = self.service.updateAppUser(**app_user)
@@ -1054,8 +1068,8 @@ class AXLHelper:
 
     def add_update_phone_button_template(self, pbt):
         try:
-            r = self.service.getPhoneButtonTemplate(name=pbt['name'])
-        except zeep.exceptions.Fault as e:
+            self.service.getPhoneButtonTemplate(name=pbt['name'])
+        except zeep.exceptions.Fault:
             r = self.service.addPhoneButtonTemplate(phoneButtonTemplate=pbt)
         else:
             pbt.pop('basePhoneTemplateName', None)

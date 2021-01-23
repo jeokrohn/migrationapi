@@ -171,10 +171,10 @@ class RestSession:
         self._base = base or self.BASE
         if session:
             self._session = session
-            self._close_sesson = False
+            self._close_session = False
         else:
             self._session = aiohttp.ClientSession(raise_for_status=False)
-            self._close_sesson = True
+            self._close_session = True
         self._semaphore = asyncio.Semaphore(value=concurrent_request)
         self._session_stats = RestStat()
 
@@ -186,7 +186,7 @@ class RestSession:
         self._session = None
 
     async def close(self):
-        if self._session and self._close_sesson:
+        if self._session and self._close_session:
             log.debug(f'{self}.close(): closing session')
             await self._session.close()
         self._session = None
@@ -202,7 +202,7 @@ class RestSession:
             'Content-type': 'application/json;charset=utf-8'
         }
 
-    async def request(self, method: str, url: str, success={200}, headers=None,
+    async def request(self, method: str, url: str, success=None, headers=None,
                       data=None, json=None, **kwargs) -> Tuple[aiohttp.ClientResponse, dict]:
         """
         Execute one API request. Return the response and the JSON body as dict. Handles 429 and
@@ -216,6 +216,7 @@ class RestSession:
         :param kwargs: additional arguments for aiohttp.request
         :return: tuple of response object and JSON body as dict
         """
+        success = success or {200}
         client_connector_errors = 0
         status_5xx = 0
         log_id = uuid.uuid4()
@@ -343,4 +344,3 @@ class RestSession:
     @property
     def stats(self) -> RestStat:
         return self._session_stats
-

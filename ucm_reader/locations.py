@@ -13,6 +13,7 @@ class Location(AXLObject):
     id: Optional[int]
     withinAudioBandwidth: Optional[int]
     withinVideoBandwidth: Optional[int]
+    # noinspection SpellCheckingInspection
     withinImmersiveKbits: Optional[int]
 
     pass

@@ -3,12 +3,13 @@ import zeep.exceptions
 import zeep.helpers
 import re
 
-from typing import Iterable, Optional, Any, Generator
+from typing import Optional, Generator
 
 __all__ = ['AXLObject', 'StringAndUUID', 'ObjApi', 'GetRequired']
 
 # Field definition for attributes which require an AXL get
 GetRequired = Field(None, get_required=True)
+
 
 class AXLObject(BaseModel):
     _axl_type: Optional[str] = None
@@ -64,6 +65,7 @@ class AXLObject(BaseModel):
         :return:
         """
         model = super(AXLObject, cls).parse_obj(obj)
+        # noinspection PyProtectedMember
         model._init_get_details(obj_api)
         return model
 
@@ -97,7 +99,7 @@ class AXLObject(BaseModel):
     @classmethod
     def do_list(cls, obj_api: 'ObjApi', first=None, skip=None):
         """
-        get a alist of objects via AXL
+        get a list of objects via AXL
         :param obj_api: axl API
         :param first: limit to the first n objects
         :param skip: skip 1st n objects
@@ -150,6 +152,7 @@ class ObjApi:
     """
     Simple API helper
     """
+
     def __init__(self, zeep_service):
         self.service = zeep_service
 

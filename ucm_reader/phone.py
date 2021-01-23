@@ -5,6 +5,7 @@ from typing import Optional, List, Any
 __all__ = ['CurrentConfig', 'Phone', 'PhoneApi']
 
 
+# noinspection SpellCheckingInspection
 class CurrentConfig(BaseModel):
     userHoldMohAudioSourceId: Optional[str]
     phoneTemplateName: Optional[StringAndUUID]
@@ -51,6 +52,7 @@ class AssociatedEndUser(BaseModel):
     userId: str
 
 
+# noinspection SpellCheckingInspection
 class AssociatedEndUserContainer(BaseModel):
     enduser: List[AssociatedEndUser]
 
@@ -68,6 +70,7 @@ class DN(BaseModel):
     uuid: str
 
 
+# noinspection SpellCheckingInspection
 class Line(BaseModel):
     index: int
     label: Optional[str]
@@ -99,15 +102,19 @@ class LineContainer(BaseModel):
     line: List[Line]
 
 
+# noinspection SpellCheckingInspection
 class SpeedDial(BaseModel):
     dirn: str
     label: str
     index: int
 
 
+# noinspection SpellCheckingInspection
 class SpeedDialContainer(BaseModel):
     speeddial: List[SpeedDial]
 
+
+# noinspection SpellCheckingInspection
 class Phone(AXLObject):
     _axl_search = 'name'
     _axl_type = 'phone'

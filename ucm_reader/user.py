@@ -1,5 +1,5 @@
 from ucm_reader.base import AXLObject, StringAndUUID, ObjApi, GetRequired
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from typing import Optional, List
 
 __all__ = ['User', 'UserApi']
@@ -9,6 +9,8 @@ class PrimaryExtension(BaseModel):
     pattern: Optional[str]
     routePartitionName: Optional[str]
 
+
+# noinspection SpellCheckingInspection
 class User(AXLObject):
     _axl_search = 'userid'
     _axl_type = 'user'
@@ -20,30 +22,30 @@ class User(AXLObject):
     mailid: Optional[str]
     department: Optional[str]
     manager: Optional[str]
-    #userLocale: Optional[str]
+    # userLocale: Optional[str]
     primaryExtension: Optional[PrimaryExtension]
-    #associatedPc: Optional[str]
-    #enableCti: Optional[str]
-    #subscribeCallingSearchSpaceName: StringAndUUID
-    #enableMobility: Optional[str]
-    #enableMobileVoiceAccess: Optional[str]
-    #maxDeskPickupWaitTime: Optional[str]
-    #remoteDestinationLimit: Optional[str]
-    #status: Optional[str]
-    #enableEmcc: Optional[str]
-    #patternPrecedence: Optional[str]
-    #numericUserId: Optional[str]
-    #mlppPassword: Optional[str]
-    #homeCluster: Optional[str]
-    #imAndPresenceEnable: Optional[str]
-    #serviceProfile: StringAndUUID
+    # associatedPc: Optional[str]
+    # enableCti: Optional[str]
+    # subscribeCallingSearchSpaceName: StringAndUUID
+    # enableMobility: Optional[str]
+    # enableMobileVoiceAccess: Optional[str]
+    # maxDeskPickupWaitTime: Optional[str]
+    # remoteDestinationLimit: Optional[str]
+    # status: Optional[str]
+    # enableEmcc: Optional[str]
+    # patternPrecedence: Optional[str]
+    # numericUserId: Optional[str]
+    # mlppPassword: Optional[str]
+    # homeCluster: Optional[str]
+    # imAndPresenceEnable: Optional[str]
+    # serviceProfile: StringAndUUID
     directoryUri: Optional[str]
     telephoneNumber: Optional[str]
     title: Optional[str]
     mobileNumber: Optional[str]
     homeNumber: Optional[str]
     pagerNumber: Optional[str]
-    #calendarPresence: Optional[str]
+    # calendarPresence: Optional[str]
     userIdentity: Optional[str]
     uuid: str
 

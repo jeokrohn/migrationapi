@@ -118,7 +118,7 @@ async def provision_single_user(sema: asyncio.Semaphore,
                                           location_id=location.id,
                                           licenses=licenses,
                                           calling_data=True)
-        print(f'{user.mailid}: added calling license and extension')
+        print(f'{user.mailid}: added calling license and extension, phone numbers: {updated.phone_numbers}')
 
 
 async def user_provisioning(users: List[User]):

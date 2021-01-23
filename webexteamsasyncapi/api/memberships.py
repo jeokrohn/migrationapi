@@ -23,7 +23,7 @@ class MembershipAPI:
         self._endpoint = self._session.endpoint('memberships')
 
     def list(self, room_id: str = None,
-             persom_id: str = None,
+             person_id: str = None,
              person_email: str = None,
              max: int = None) -> AsyncIterator[Membership]:
         params = {to_camel(k): v for k, v in locals().items() if v is not None and k != 'self'}

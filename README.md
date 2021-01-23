@@ -10,9 +10,9 @@ To use the sample code:
   A possible fallback is to follow these steps: https://docs.python.org/3/tutorial/venv.html  
 * Download all file of this repository to a project directory
 * in that project directory install the project requirements with `pip install -r requirements.txt`.  
-  If you created and activated a virtual environment before the project requirements are not installed in the 
+  If you created and activated a virtual environment before then the project requirements are not installed in the 
   context of your system Python installation but only in the context of your virtual environment  
-* rename the file `.env sample` in the project directory to `.env` and in the file edit the required settings: 
+* rename the file ".env sample" in the project directory to ".env" and in the file edit the required settings: 
   ```
   AXL_HOST=<UCM host to be used for AXL requests>  
   AXL_USER=<username for AXL authentication>  

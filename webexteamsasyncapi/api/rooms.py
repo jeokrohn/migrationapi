@@ -15,6 +15,7 @@ class Room(CamelModel):
     created: str
     owner_id: Optional[str]
 
+
 class MeetingDetails(CamelModel):
     """
     Return value of space_meeting_details() call

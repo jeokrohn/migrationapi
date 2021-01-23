@@ -1,5 +1,4 @@
 from typing import Optional, AsyncIterator, List
-from typing import Optional, AsyncIterator, List
 
 from ..rest import RestSession
 from ..util import to_camel, CamelModel
@@ -68,7 +67,7 @@ class PeopleAPI:
                      org_id: str = None,
                      roles: Optional[List[str]] = None,
                      licenses: Optional[List[str]] = None,
-                     location_id: Optional[str]=None) -> Person:
+                     location_id: Optional[str] = None) -> Person:
         params = {to_camel(k): v for k, v in locals().items() if k != 'self' and v is not None}
         url = self._endpoint
         r = await self._session.post(url=url, json=params)
@@ -89,7 +88,7 @@ class PeopleAPI:
                      extension: str = None,
                      avatar=None, roles=None,
                      licenses: List[str] = None,
-                     location_id: Optional[str]=None,
+                     location_id: Optional[str] = None,
                      calling_data: bool = False) -> Person:
 
         assert licenses is not None, 'To clear licenses pass am empty list'

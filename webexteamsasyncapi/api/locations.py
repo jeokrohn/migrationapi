@@ -19,6 +19,7 @@ class Location(CamelModel):
     org_id: str
     address: LocationAddress
 
+
 class LocationsAPI:
     def __init__(self, session: RestSession):
         self._session = session

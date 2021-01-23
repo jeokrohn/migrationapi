@@ -1,5 +1,5 @@
 # rename this file to '.env' and set the parameters accordingly
-AXL_HOST=<UCM host to be used for AXL reequests>
+AXL_HOST=<UCM host to be used for AXL requests>
 AXL_USER=<username for AXL authentication>
 AXL_PASSWORD=<password for AXL authentication>
 WEBEX_ACCESS_TOKEN=<access token obtained from developer.webex.com>

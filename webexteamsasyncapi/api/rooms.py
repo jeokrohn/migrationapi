@@ -1,4 +1,4 @@
-from typing import AsyncIterator, Optional
+from typing import AsyncGenerator, Optional
 
 from ..rest import RestSession
 from ..util import to_camel, CamelModel
@@ -36,12 +36,13 @@ class RoomsAPI:
     def list(self, team_id: str = None,
              type: str = None,
              sort_by: str = None,
-             max: int = None) -> AsyncIterator[Room]:
+             max: int = None) -> AsyncGenerator[Room, None]:
         assert type is None or type in ['direct', 'group']
         assert sort_by is None or sort_by in ['id', 'lastactivity', 'Created']
         params = {to_camel(k): v for k, v in locals().items() if v is not None and k != 'self'}
 
         url = self._endpoint
+        # noinspection PyTypeChecker
         return self._session.pagination(url=url, params=params, factory=Room.parse_obj)
 
     async def create(self, title: str, team_id: str = None) -> Room:

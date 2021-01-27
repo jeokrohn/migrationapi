@@ -6,7 +6,7 @@ import json as json_mod
 import urllib.parse
 import time
 
-from typing import Callable, Dict, Tuple, Union
+from typing import Callable, Dict, Tuple, Union, AsyncGenerator
 
 from collections import defaultdict, UserDict
 from dataclasses import dataclass, field
@@ -20,8 +20,6 @@ class RestError(aiohttp.ClientResponseError):
     def __init__(self, request_body: Union[dict, str, None] = None, response_body: Union[dict, str, None] = None,
                  *args, **kwargs):
         super(RestError, self).__init__(*args, **kwargs)
-        if isinstance(request_body, dict):
-            request_body = json_mod.dumps(request_body)
         if isinstance(response_body, dict):
             response_body = json_mod.dumps(response_body)
         self.request_body = request_body
@@ -165,10 +163,11 @@ class RestSession:
     CONCURRENT_REQUESTS = 10
     MAX_WAIT_ON_429 = 20
 
-    def __init__(self, access_token: str, base=BASE, session: aiohttp.ClientSession = None,
-                 concurrent_request: int = CONCURRENT_REQUESTS):
+    def __init__(self, access_token: str, base: str = None, session: aiohttp.ClientSession = None,
+                 concurrent_request: int = None):
         self._access_token = access_token
         self._base = base or self.BASE
+        concurrent_request = concurrent_request or self.CONCURRENT_REQUESTS
         if session:
             self._session = session
             self._close_session = False
@@ -313,7 +312,7 @@ class RestSession:
         return f'{self._base}/{domain}'
 
     async def pagination(self, url: str, params: dict,
-                         factory: Callable[[Dict], CamelModel]) -> CamelModel:
+                         factory: Callable[[Dict], CamelModel]) -> AsyncGenerator[CamelModel, None]:
         """
         Async iterator handling RFC5988 pagination of list requests
         :param url: start url for 1st GET

@@ -21,3 +21,9 @@ To use the sample code:
   GMAIL_ID=<gmail email id user to create dummy email addresses for Webex test users>
   ```
  
+To obtain a Webex access token you need to navigate to https://developer.webex.com and log in as an administrator of your Webex site.
+
+Then select ![img_4.png](.README_images/img_4.png) in the header and then ![img_5.png](.README_images/img_5.png) at the left. This gets you to this:
+![img_2.png](.README_images/img_2.png)
+
+There you want to copy the access token to your clipboard using the ![img_6.png](.README_images/img_6.png) icon from where you can then paste the token to the `.env` file.

@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 import zeep.exceptions
 import zeep.helpers
 import re
+import logging
 
 from typing import Optional, Generator
 
@@ -9,6 +10,8 @@ __all__ = ['AXLObject', 'StringAndUUID', 'ObjApi', 'GetRequired']
 
 # Field definition for attributes which require an AXL get
 GetRequired = Field(None, get_required=True)
+
+log = logging.getLogger(__name__)
 
 
 class AXLObject(BaseModel):
@@ -82,6 +85,7 @@ class AXLObject(BaseModel):
             if field.field_info.extra.get('get_required') and not self._details_read:
                 # need to get the details via AXL
                 get_method_name = f'get{self._axl_type.capitalize()}'
+                log.debug(f'{get_method_name(uuid={self.uuid})} triggered by access to {self.__class__.__name__}.{item}')
                 get_method = self._obj_api.service[get_method_name]
                 zeep_response = get_method(uuid=self.uuid)
                 zeep_data = zeep_response['return'][next(iter(zeep_response['return']))]
@@ -96,6 +100,12 @@ class AXLObject(BaseModel):
 
         return super(AXLObject, self).__getattribute__(item)
 
+    def __repr_args__(self):
+        # suppress _details_read and _obj_api from string output
+        return [(a, v)
+                for a, v in super(AXLObject, self).__repr_args__()
+                if a not in ['_details_read', '_obj_api']]
+
     @classmethod
     def do_list(cls, obj_api: 'ObjApi', first=None, skip=None):
         """
@@ -108,6 +118,7 @@ class AXLObject(BaseModel):
         # the AXL method to list the objects is something like 'listUser'
         list_call_name = f'list{cls._axl_type.capitalize()}'
         list_call = obj_api.service[list_call_name]
+        log.debug(f'Calling {list_call_name}')
         try:
             zeep_response = list_call(searchCriteria={cls._axl_search: '%'},
                                       returnedTags={t: '' for t in cls.tags()},
@@ -124,6 +135,7 @@ class AXLObject(BaseModel):
                 total_rows = int(m.group(1))
                 batch_size = int(m.group(2))
                 batch_size = int(batch_size * 0.7)
+                log.debug(f'{list_call_name} returns to many rows, need to request batches: {message}')
                 result = []
                 for skip in range(0, total_rows, batch_size):
                     batch = cls.do_list(obj_api, first=batch_size, skip=skip)
@@ -137,6 +149,7 @@ class AXLObject(BaseModel):
         # list of objects is in the first entry of the return dictionary
         zeep_response = zeep_response['return'][next(iter(zeep_response['return']))]
         result = []
+        log.debug(f'{list_call_name} serializing {len(zeep_response)} {cls.__name__} objects')
         for zeep_object in zeep_response:
             d = zeep.helpers.serialize_object(zeep_object)
             # the AXl response potentially contains more attributes than we are interested in

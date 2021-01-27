@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from dotenv import load_dotenv
 import os
 from ucm_reader import UCMReader
@@ -6,6 +7,7 @@ from collections import defaultdict
 import random
 import asyncio
 import datetime
+import time
 
 from ucm_reader import User
 from webexteamsasyncapi import WebexTeamsAsyncAPI, License, Location
@@ -20,6 +22,8 @@ PARALLEL_TASKS = 5
 
 # don't actually provision users
 READONLY = True
+
+TIMESTAMP_IN_USER_EMAILS = False
 
 
 def from_env(key: str) -> str:
@@ -50,7 +54,10 @@ def webex_email(user: User):
     # get the user portion of the email
     email_user = user.mailid.split('@')[0]
     # now construct an email address to be used in Webex. We add a timestamp so that they are unique
-    email = f'{GMAIL_ID}+{time_stamp}-{email_user}@gmail.com'
+    if TIMESTAMP_IN_USER_EMAILS:
+        email = f'{GMAIL_ID}+{time_stamp}-{email_user}@gmail.com'
+    else:
+        email = f'{GMAIL_ID}-{email_user}@gmail.com'
     return email
 
 
@@ -103,14 +110,16 @@ async def provision_single_user(sema: asyncio.Semaphore,
         print(f'{user.mailid}: user does not exist')
 
         if READONLY:
-            print(f'{user.mailid} Skipping provisioning b/c READONLY is set')
+            print(f'{user.mailid} Skipping provisioning b/c READONLY is set to True')
             return
 
         print(f'{user.mailid}: creating user')
+        start = time.perf_counter()
         new_user = await api.people.create(emails=[email],
                                            display_name=webex_display_name(user),
                                            first_name=user.firstName,
                                            last_name=user.lastName)
+        print(f'{user.mailid}: creating user took {(time.perf_counter() - start) * 1000:.3f} ms')
         print(f'{user.mailid}: created user, id: {new_user.id}')
         licenses = new_user.licenses
         licenses.append(calling_license.id)
@@ -118,6 +127,7 @@ async def provision_single_user(sema: asyncio.Semaphore,
         # now we still need to add the calling license to the user and set the extension
         extension = webex_extension(user)
         print(f'{user.mailid}: adding calling license and extension {extension}')
+        start = time.perf_counter()
         updated = await api.people.update(person_id=new_user.id,
                                           first_name=new_user.first_name,
                                           last_name=new_user.last_name,
@@ -126,6 +136,7 @@ async def provision_single_user(sema: asyncio.Semaphore,
                                           location_id=location.id,
                                           licenses=licenses,
                                           calling_data=True)
+        print(f'{user.mailid}: adding calling license and extension took {(time.perf_counter() - start) * 1000:.3f} ms')
         print(f'{user.mailid}: added calling license and extension, phone numbers: {updated.phone_numbers}')
 
 
@@ -138,6 +149,9 @@ async def user_provisioning(users: List[User]):
     sema = asyncio.Semaphore(PARALLEL_TASKS)
     async with WebexTeamsAsyncAPI(access_token=WEBEX_TOKEN,
                                   concurrent_requests=10) as api:
+        rest_stats_before = api.rest_session.stats.snapshot()
+        start = time.perf_counter()
+
         print('Getting calling license')
         licence = await get_calling_license(api)
         print(f'Got calling license, id: {licence.id}')
@@ -160,12 +174,38 @@ async def user_provisioning(users: List[User]):
                                        user=user)
                  for user in users]
         results = await asyncio.gather(*tasks, return_exceptions=True)
+        stop = time.perf_counter()
+
         for user, result in zip(users, results):
             if isinstance(result, Exception):
                 print(f'Provisioning of user {user.mailid} failed: {result}')
 
+        print(f'Time: {(stop - start) * 1000:.3f}ms')
+        rest_stats = api.rest_session.stats
+        rest_stats -= rest_stats_before
+        print('REST stats:')
+        print('\n'.join(rest_stats.pretty()))
+
+
+async def validate_access_token():
+    """
+    Check whether the Webex access token is valid
+    :return:
+    """
+    async with WebexTeamsAsyncAPI(access_token=WEBEX_TOKEN) as api:
+        try:
+            [p async for p in api.people.list()]
+        except Exception as e:
+            print(f'Trying to get a list of users failed: {e}')
+            print("""Make sure to obtain a valid access token from https://developer.webex.com/docs/api/getting-started 
+and put that token in your .env file in the main directory.""")
+            exit(1)
+
 
 def main():
+    asyncio.run(validate_access_token())
+    if READONLY:
+        print(f'If you actually want this script to create users then you need to set READONLY to False in {__file__}')
     print('Preparing UCMReader...')
     with UCMReader(host=AXL_HOST, user=AXL_USER, password=AXL_PASSWORD) as ucm_reader:
         # get all users from UCM
@@ -196,9 +236,10 @@ def main():
 
         # b/c we only have limited licenses we pick some random users
         users = random.sample(users, TEST_USERS_TO_PROVISION)
-        # we want to use asyncio to be able to provision multiple users "in parallel" b/c a single transaction
-        # can take a while...
-        asyncio.run(user_provisioning(users=users))
+
+    # we want to use asyncio to be able to provision multiple users "in parallel" b/c a single transaction
+    # can take a while...
+    asyncio.run(user_provisioning(users=users))
 
 
 if __name__ == '__main__':
@@ -207,7 +248,8 @@ if __name__ == '__main__':
     logging.getLogger('ucmaxl').setLevel(logging.INFO)
     logging.getLogger('urllib3').setLevel(logging.INFO)
     logging.getLogger('zeep').setLevel(logging.INFO)
-    logging.getLogger('zeep.transports').setLevel(logging.INFO)
-    logging.getLogger('webexteamsasyncapi.rest').setLevel(logging.INFO)
+    logging.getLogger('zeep.transports').setLevel(logging.INFO)  # set this to DEBUG for SOAP messages
+    logging.getLogger('ucm_reader.base').setLevel(logging.INFO)  # set this to DEBUG for ucm_reader transactions
+    logging.getLogger('webexteamsasyncapi.rest').setLevel(logging.INFO)  # set this to DEBUG for REST message details
     logging.getLogger('webexteamsasyncapi.api').setLevel(logging.INFO)
     main()

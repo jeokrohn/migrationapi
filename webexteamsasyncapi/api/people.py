@@ -1,4 +1,4 @@
-from typing import Optional, AsyncIterator, List
+from typing import Optional, AsyncGenerator, List
 
 from ..rest import RestSession
 from ..util import to_camel, CamelModel
@@ -53,12 +53,13 @@ class PeopleAPI:
 
     def list(self, email: str = None, display_name: str = None,
              id: str = None,
-             org_id: str = None, max: int = None) -> AsyncIterator[Person]:
+             org_id: str = None, max: int = None) -> AsyncGenerator[Person, None]:
 
         params = {to_camel(k): v for k, v in locals().items() if v is not None}
         params.pop('self')
 
         url = self._endpoint
+        # noinspection PyTypeChecker
         return self._session.pagination(url=url, params=params, factory=Person.parse_obj)
 
     async def create(self, emails: List[str], display_name: str = None,

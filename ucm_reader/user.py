@@ -56,9 +56,14 @@ class User(AXLObject):
 class UserApi(ObjApi):
     def __init__(self, zeep_service):
         super(UserApi, self).__init__(zeep_service)
-        self._list = None
+        self._list: Optional[List[User]] = None
 
     def list(self, refresh=False) -> List[User]:
+        """
+        Get list of UCM users. Retrieve the list from UCM on 1st call
+        :param refresh: if True then don't return cached list and instead re-read the list from UCM via AXl
+        :return:
+        """
         if refresh or self._list is None:
             self._list = User.do_list(obj_api=self)
         return self._list

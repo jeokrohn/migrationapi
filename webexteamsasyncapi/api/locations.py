@@ -1,4 +1,4 @@
-from typing import AsyncIterator
+from typing import AsyncGenerator
 
 from ..rest import RestSession
 from ..util import to_camel, CamelModel
@@ -25,9 +25,10 @@ class LocationsAPI:
         self._session = session
         self._endpoint = self._session.endpoint('locations')
 
-    def list(self, name: str = None, id: str = None, max: int = None) -> AsyncIterator[Location]:
+    def list(self, name: str = None, id: str = None, max: int = None) -> AsyncGenerator[Location, None]:
         data = {to_camel(k): v for k, v in locals().items() if k != 'self' and v is not None}
         url = f'{self._endpoint}'
+        # noinspection PyTypeChecker
         return self._session.pagination(url=url, params=data, factory=Location.parse_obj)
 
     async def details(self, location_id) -> Location:

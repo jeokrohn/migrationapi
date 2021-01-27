@@ -1,4 +1,4 @@
-from typing import AsyncIterator, Optional
+from typing import AsyncGenerator, Optional
 
 from ..rest import RestSession
 from ..util import to_camel, CamelModel
@@ -19,9 +19,10 @@ class LicensesAPI:
         self._session = session
         self._endpoint = self._session.endpoint('licenses')
 
-    def list(self, org_id: str = None) -> AsyncIterator[License]:
+    def list(self, org_id: str = None) -> AsyncGenerator[License, None]:
         data = {to_camel(k): v for k, v in locals().items() if k != 'self' and v is not None}
         url = f'{self._endpoint}'
+        # noinspection PyTypeChecker
         return self._session.pagination(url=url, params=data, factory=License.parse_obj)
 
     async def details(self, license_id) -> License:

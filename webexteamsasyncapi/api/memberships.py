@@ -1,4 +1,4 @@
-from typing import AsyncIterator
+from typing import AsyncGenerator
 
 from ..rest import RestSession
 from ..util import to_camel, CamelModel
@@ -25,10 +25,11 @@ class MembershipAPI:
     def list(self, room_id: str = None,
              person_id: str = None,
              person_email: str = None,
-             max: int = None) -> AsyncIterator[Membership]:
+             max: int = None) -> AsyncGenerator[Membership, None]:
         params = {to_camel(k): v for k, v in locals().items() if v is not None and k != 'self'}
 
         url = self._endpoint
+        # noinspection PyTypeChecker
         return self._session.pagination(url=url, params=params, factory=Membership.parse_obj)
 
     async def create(self, room_id: str,

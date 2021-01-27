@@ -251,9 +251,14 @@ class Phone(AXLObject):
 class PhoneApi(ObjApi):
     def __init__(self, zeep_service):
         super(PhoneApi, self).__init__(zeep_service)
-        self._list = None
+        self._list: Optional[List[Phone]] = None
 
     def list(self, refresh=False) -> List[Phone]:
+        """
+        Get list of UCM phones. Retrieve the list from UCM on 1st call
+        :param refresh: if True then don't return cached list and instead re-read the list from UCM via AXl
+        :return:
+        """
         if refresh or self._list is None:
             self._list = Phone.do_list(obj_api=self)
         return self._list

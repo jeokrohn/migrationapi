@@ -10,7 +10,7 @@ import datetime
 import time
 
 from ucm_reader import User
-from webexteamsasyncapi import WebexTeamsAsyncAPI, License, Location
+from webexteamsasyncapi import WebexTeamsAsyncAPI, License, Location, PhoneNumber
 
 from typing import List, Optional
 
@@ -77,6 +77,16 @@ def webex_extension(user: User) -> str:
     return user.telephoneNumber.strip()[-4:]
 
 
+def webex_did(user: User) -> str:
+    """
+    For a given UCM user determine the DID to be used in Webex Calling
+    :param user: UCM user
+    :return: DID
+    """
+    # we strip the leading "+1"
+    return user.telephoneNumber[2:]
+
+
 async def get_locations(api: WebexTeamsAsyncAPI) -> List[Location]:
     """
     Get list of all Webex Calling locations
@@ -124,8 +134,9 @@ async def provision_single_user(sema: asyncio.Semaphore,
         licenses = new_user.licenses
         licenses.append(calling_license.id)
 
-        # now we still need to add the calling license to the user and set the extension
+        # now we still need to add the calling license to the user and set the extension and DID
         extension = webex_extension(user)
+        phone_numbers = [PhoneNumber(type='work', value=webex_did(user))]
         print(f'{user.mailid}: adding calling license and extension {extension}')
         start = time.perf_counter()
         updated = await api.people.update(person_id=new_user.id,
@@ -135,6 +146,7 @@ async def provision_single_user(sema: asyncio.Semaphore,
                                           extension=extension,
                                           location_id=location.id,
                                           licenses=licenses,
+                                          phone_numbers=phone_numbers,
                                           calling_data=True)
         print(f'{user.mailid}: adding calling license and extension took {(time.perf_counter() - start) * 1000:.3f} ms')
         print(f'{user.mailid}: added calling license and extension, phone numbers: {updated.phone_numbers}')

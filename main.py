@@ -50,6 +50,13 @@ async def get_calling_license(api: WebexTeamsAsyncAPI) -> Optional[License]:
 
 
 def webex_email(user: User):
+    """
+    For a given UCM user determine the email address be used in Webex Calling
+    Here we create dummy email addresses under a given GMAIL address
+    In reality one would use the actual email address of the UCM user
+    :param user: UCM user
+    :return: email address
+    """
     time_stamp = datetime.datetime.utcnow().strftime('%Y%m%d%H')
     # get the user portion of the email
     email_user = user.mailid.split('@')[0]
@@ -62,6 +69,12 @@ def webex_email(user: User):
 
 
 def webex_display_name(user: User):
+    """
+    For a given UCM user determine the display name to be used in Webex Calling
+    Here we simply take the concatenation of first and last name
+    :param user: UCM user
+    :return: display name
+    """
     display_name = f'{user.firstName} {user.lastName}'
     return display_name
 
@@ -171,7 +184,7 @@ async def user_provisioning(users: List[User]):
         print('Getting locations')
         locations = await get_locations(api=api)
         print('Got list of locations')
-        # We are looking for a location 'SJC' that's where we wan to put our users
+        # We are looking for a location 'SJC' that's where we want to put our users
         sjc_location = next((location
                              for location in locations
                              if location.name == 'SJC'), None)

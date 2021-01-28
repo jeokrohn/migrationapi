@@ -15,10 +15,10 @@ from webexteamsasyncapi import WebexTeamsAsyncAPI, License, Location, PhoneNumbe
 from typing import List, Optional
 
 # number of test users to provision
-TEST_USERS_TO_PROVISION = 10
+TEST_USERS_TO_PROVISION = 30
 
 # number of parallel user provisioning tasks
-PARALLEL_TASKS = 5
+PARALLEL_TASKS = 15
 
 # don't actually provision users
 READONLY = True
@@ -64,7 +64,7 @@ def webex_email(user: User):
     if TIMESTAMP_IN_USER_EMAILS:
         email = f'{GMAIL_ID}+{time_stamp}-{email_user}@gmail.com'
     else:
-        email = f'{GMAIL_ID}-{email_user}@gmail.com'
+        email = f'{GMAIL_ID}+{email_user}@gmail.com'
     return email
 
 
@@ -109,8 +109,7 @@ async def get_locations(api: WebexTeamsAsyncAPI) -> List[Location]:
     return [location async for location in api.locations.list()]
 
 
-async def provision_single_user(sema: asyncio.Semaphore,
-                                api: WebexTeamsAsyncAPI,
+async def provision_single_user(api: WebexTeamsAsyncAPI,
                                 calling_license: License,
                                 location: Location,
                                 user: User):
@@ -123,46 +122,44 @@ async def provision_single_user(sema: asyncio.Semaphore,
     :param user: UCM user information
     :return:
     """
-    # limit the number of concurrent provisioning tasks
-    async with sema:
-        email = webex_email(user)
-        people_list = [p async for p in api.people.list(email=email)]
-        if people_list:
-            print(f'{user.mailid}: user exists')
-            return
-        print(f'{user.mailid}: user does not exist')
+    email = webex_email(user)
+    people_list = [p async for p in api.people.list(email=email)]
+    if people_list:
+        print(f'{user.mailid}: user exists')
+        return
+    print(f'{user.mailid}: user does not exist')
 
-        if READONLY:
-            print(f'{user.mailid} Skipping provisioning b/c READONLY is set to True')
-            return
+    if READONLY:
+        print(f'{user.mailid} Skipping provisioning b/c READONLY is set to True')
+        return
 
-        print(f'{user.mailid}: creating user')
-        start = time.perf_counter()
-        new_user = await api.people.create(emails=[email],
-                                           display_name=webex_display_name(user),
-                                           first_name=user.firstName,
-                                           last_name=user.lastName)
-        print(f'{user.mailid}: creating user took {(time.perf_counter() - start) * 1000:.3f} ms')
-        print(f'{user.mailid}: created user, id: {new_user.id}')
-        licenses = new_user.licenses
-        licenses.append(calling_license.id)
+    print(f'{user.mailid}: creating user')
+    start = time.perf_counter()
+    new_user = await api.people.create(emails=[email],
+                                       display_name=webex_display_name(user),
+                                       first_name=user.firstName,
+                                       last_name=user.lastName)
+    print(f'{user.mailid}: creating user took {(time.perf_counter() - start) * 1000:.3f} ms')
+    print(f'{user.mailid}: created user, id: {new_user.id}')
+    licenses = new_user.licenses
+    licenses.append(calling_license.id)
 
-        # now we still need to add the calling license to the user and set the extension and DID
-        extension = webex_extension(user)
-        phone_numbers = [PhoneNumber(type='work', value=webex_did(user))]
-        print(f'{user.mailid}: adding calling license and extension {extension}')
-        start = time.perf_counter()
-        updated = await api.people.update(person_id=new_user.id,
-                                          first_name=new_user.first_name,
-                                          last_name=new_user.last_name,
-                                          display_name=new_user.display_name,
-                                          extension=extension,
-                                          location_id=location.id,
-                                          licenses=licenses,
-                                          phone_numbers=phone_numbers,
-                                          calling_data=True)
-        print(f'{user.mailid}: adding calling license and extension took {(time.perf_counter() - start) * 1000:.3f} ms')
-        print(f'{user.mailid}: added calling license and extension, phone numbers: {updated.phone_numbers}')
+    # now we still need to add the calling license to the user and set the extension and DID
+    extension = webex_extension(user)
+    phone_numbers = [PhoneNumber(type='work', value=webex_did(user))]
+    print(f'{user.mailid}: adding calling license and extension {extension}')
+    start = time.perf_counter()
+    updated = await api.people.update(person_id=new_user.id,
+                                      first_name=new_user.first_name,
+                                      last_name=new_user.last_name,
+                                      display_name=new_user.display_name,
+                                      extension=extension,
+                                      location_id=location.id,
+                                      licenses=licenses,
+                                      phone_numbers=phone_numbers,
+                                      calling_data=True)
+    print(f'{user.mailid}: adding calling license and extension took {(time.perf_counter() - start) * 1000:.3f} ms')
+    print(f'{user.mailid}: added calling license and extension, phone numbers: {updated.phone_numbers}')
 
 
 async def user_provisioning(users: List[User]):
@@ -173,7 +170,7 @@ async def user_provisioning(users: List[User]):
     """
     sema = asyncio.Semaphore(PARALLEL_TASKS)
     async with WebexTeamsAsyncAPI(access_token=WEBEX_TOKEN,
-                                  concurrent_requests=10) as api:
+                                  concurrent_requests=PARALLEL_TASKS) as api:
         rest_stats_before = api.rest_session.stats.snapshot()
         start = time.perf_counter()
 
@@ -192,12 +189,13 @@ async def user_provisioning(users: List[User]):
             print('Failed to get location "SJC"')
             return
         print(f'location "SJC", id: {sjc_location.id}')
-        tasks = [provision_single_user(sema=sema,
-                                       api=api,
+        # Prepare list of provisioning tasks
+        tasks = [provision_single_user(api=api,
                                        calling_license=licence,
                                        location=sjc_location,
                                        user=user)
                  for user in users]
+        # schedule all tasks for execution and gather results
         results = await asyncio.gather(*tasks, return_exceptions=True)
         stop = time.perf_counter()
 

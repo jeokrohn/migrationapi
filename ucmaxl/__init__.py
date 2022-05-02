@@ -13,6 +13,7 @@ import re
 import tempfile
 import zipfile
 import logging
+import urllib3
 
 log = logging.getLogger(__name__)
 
@@ -38,6 +39,8 @@ class AXLHelper:
         self.session.auth = auth
         if verify is not None:
             self.session.verify = verify
+            if not verify:
+                urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
         version = version or self._get_version()
 
@@ -79,6 +82,17 @@ class AXLHelper:
             temp_dir.cleanup()
         return
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
+    def close(self):
+        if self.session:
+            self.session.close()
+            self.session = None
+
     # noinspection SpellCheckingInspection
     def _get_version(self):
         """
@@ -87,7 +101,7 @@ class AXLHelper:
         :return: UCM version
         """
         # try for a number of UCM versions
-        for major_version in [12, 11, 10, 14, 9, 8]:
+        for major_version in [14, 12, 11, 10, 9, 8]:
             soap_envelope = (f'<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" '
                              f'xmlns:ns="http://www.cisco.com/AXL/API/{major_version}.0"><soapenv:Header/>'
                              f'<soapenv:Body><ns:getCCMVersion></ns:getCCMVersion></soapenv:Body></soapenv:Envelope>')

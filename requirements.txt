@@ -4,3 +4,4 @@ pydantic
 requests
 urllib3
 aiohttp
+wxc-sdk >= 1.3.0

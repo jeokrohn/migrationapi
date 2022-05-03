@@ -67,7 +67,10 @@ def normalize(patterns: Iterable[LearnedPattern]) -> Generator[LearnedPattern, N
     :return:
     """
     # regex to catch patterns with [..] in it
-    catch_re = re.compile(r'(?P<pre>.*?)(?P<re_part>\[.+?])(?P<post>.*)')
+    catch_re = re.compile(r"""(?P<pre>.*?)          # any characters (non greedy) until ...
+                              (?P<re_part>\[.+?])   # "[” followed by any characters(non greedy) until "]"
+                              (?P<post>.*)          # and whatever might come after that enumeration""",
+                          flags=re.VERBOSE)
     for learned_pattern in patterns:
         pattern = learned_pattern.pattern
         if any(c in pattern for c in '.*!'):

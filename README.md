@@ -31,6 +31,6 @@ the left. This gets you to this:
 There you want to copy the access token to your clipboard using the ![img_6.png](.README_images/img_6.png) icon from 
 where you can then paste the token to the `.env` file.
 
-For `read_hdpr.py` you have to edit the `read_gdpr.yml` file and enter the host names and credentials of the UCM hosts 
+For `read_gdpr.py` you have to edit the `read_gdpr.yml` file and enter the host names and credentials of the UCM hosts 
 that the tool should read GDPR learned patterns from. The tool creates a CSV file with all patterns learned by any of 
 the UCM hosts configured.

@@ -1,19 +1,19 @@
 """
 AXL helper to wrap SOAP methods created based on the UCM AXL WSDL
 """
-import zeep
-import zeep.cache
-import zeep.helpers
-import zeep.exceptions
-from zeep.plugins import HistoryPlugin
-import requests
+import logging
 import os
-from collections import OrderedDict
 import re
 import tempfile
 import zipfile
-import logging
+
+import requests
 import urllib3
+import zeep
+import zeep.cache
+import zeep.exceptions
+import zeep.helpers
+from zeep.plugins import HistoryPlugin
 
 log = logging.getLogger(__name__)
 
@@ -137,7 +137,7 @@ class AXLHelper:
         if r['return'] is None:
             return []
 
-        return [OrderedDict(((t.tag, t.text) for t in row)) for row in r['return']['row']]
+        return [{t.tag: t.text for t in row} for row in r['return']['row']]
 
     def sql_update(self, sql):
         """

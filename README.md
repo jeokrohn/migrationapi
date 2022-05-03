@@ -1,4 +1,4 @@
-# Python Code for the API session at the Cloud Calling Migrations workshop Jan 2021
+# Python Code to support UCM to Webex Calling migrations
 
 Based on Python 3.8
 
@@ -21,9 +21,16 @@ To use the sample code:
   GMAIL_ID=<gmail email id user to create dummy email addresses for Webex test users>
   ```
  
-To obtain a Webex access token you need to navigate to https://developer.webex.com and log in as an administrator of your Webex site.
+To obtain a Webex access token you need to navigate to https://developer.webex.com and log in as an administrator of 
+your Webex site.
 
-Then select ![img_4.png](.README_images/img_4.png) in the header and then ![img_5.png](.README_images/img_5.png) at the left. This gets you to this:
+Then select ![img_4.png](.README_images/img_4.png) in the header and then ![img_5.png](.README_images/img_5.png) at 
+the left. This gets you to this:
 ![img_2.png](.README_images/img_2.png)
 
-There you want to copy the access token to your clipboard using the ![img_6.png](.README_images/img_6.png) icon from where you can then paste the token to the `.env` file.
+There you want to copy the access token to your clipboard using the ![img_6.png](.README_images/img_6.png) icon from 
+where you can then paste the token to the `.env` file.
+
+For `read_hdpr.py` you have to edit the `read_gdpr.yml` file and enter the host names and credentials of the UCM hosts 
+that the tool should read GDPR learned patterns from. The tool creates a CSV file with all patterns learned by any of 
+the UCM hosts configured.

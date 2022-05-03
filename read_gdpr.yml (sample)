@@ -1,0 +1,9 @@
+- host: a
+  password: pass1
+  user: user1
+- host: b
+  password: pass2
+  user: user2
+- host: c
+  password: pass3
+  user: user3

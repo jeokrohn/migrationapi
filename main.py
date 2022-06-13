@@ -33,7 +33,7 @@ log = logging.getLogger(__name__)
 
 def from_env(key: str) -> str:
     """
-    Try to get a value from an environment variable and raise KeyError of the environment variable is not set
+    Try to get a value from an environment variable and raise KeyError if the environment variable is not set
     """
     value = os.getenv(key)
     if value is None:
@@ -298,7 +298,7 @@ async def user_provisioning(*, users: List[User]):
 
 async def validate_access_token():
     """
-    Check whether the Webex access token is valid by tring to list users
+    Check whether the Webex access token is valid by trying to list users
     :return:
     """
     async with AsWebexSimpleApi(tokens=WEBEX_TOKEN) as api:

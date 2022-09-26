@@ -129,7 +129,7 @@ class AXLObject(BaseModel):
             # Error to look for is something like:
             # 'Query request too large. Total rows matched: 1277 rows. Suggestive Row Fetch: less than 953 rows'
             message = e.message
-            if (m := re.match(r'Query request too large\..+matched: (\d+) row.+less than (\d+)', message,flahs=re.VERBOSE)):
+            if (m := re.match(r'Query request too large\..+matched: (\d+) row.+less than (\d+)', message)):
                 total_rows = int(m.group(1))
                 batch_size = int(m.group(2))
                 batch_size = int(batch_size * 0.7)

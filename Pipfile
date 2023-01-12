@@ -5,15 +5,12 @@ name = "pypi"
 
 [packages]
 python-dotenv = "*"
-zeep = "*"
-pydantic = "*"
-requests = "*"
-urllib3 = "*"
-aiohttp = "*"
+ucmaxl = {editable = true, ref = "main", git = "https://github.com/jeokrohn/ucmaxl"}
 pyyaml = "*"
-wxc-sdk = ">=1.3.0"
+pydantic = "*"
 
 [dev-packages]
 
 [requires]
-python_version = "3.9"
+python_version = "3.10"
+python_full_version = "3.10.9"

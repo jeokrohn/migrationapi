@@ -1,6 +1,6 @@
 # Python Code to support UCM to Webex Calling migrations
 
-Based on Python 3.8
+Based on Python 3.10
 
 To use the sample code:
 * install Python from [python.org](https://www.python.org)

@@ -34,3 +34,7 @@ where you can then paste the token to the `.env` file.
 For `read_gdpr.py` you have to edit the `read_gdpr.yml` file and enter the host names and credentials of the UCM hosts 
 that the tool should read GDPR learned patterns from. The tool creates a CSV file with all patterns learned by any of 
 the UCM hosts configured.
+
+Finally, `export_to_csv.py` is a simple tool to extract a table from UCM's Db into a CSV file. The table to export is 
+passed as parameter when calling the script. The UCM data dictionary with documentation of all tables can be found here: 
+https://developer.cisco.com/docs/axl/ 

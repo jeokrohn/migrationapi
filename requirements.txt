@@ -14,6 +14,6 @@ requests-file==1.5.1
 requests-toolbelt==0.10.1
 six==1.16.0
 typing_extensions==4.4.0
--e git+https://github.com/jeokrohn/ucmaxl@97cf28760330317d73ace4e3f74ee33340cb67c4#egg=ucmaxl
+-e git+https://github.com/jeokrohn/ucmaxl@41fd647731fc8176f1c59a081598b627607814cc#egg=ucmaxl
 urllib3==1.26.14
 zeep==4.2.1

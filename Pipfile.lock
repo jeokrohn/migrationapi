@@ -377,7 +377,7 @@
         "ucmaxl": {
             "editable": true,
             "git": "https://github.com/jeokrohn/ucmaxl",
-            "ref": "97cf28760330317d73ace4e3f74ee33340cb67c4"
+            "ref": "41fd647731fc8176f1c59a081598b627607814cc"
         },
         "urllib3": {
             "hashes": [
